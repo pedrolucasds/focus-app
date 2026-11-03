@@ -1,0 +1,11 @@
+# Banco de Dados
+tarefas.db
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+
+# Pastas de compilação (caso use o PyInstaller no futuro)
+build/
+dist/
+*.spec
