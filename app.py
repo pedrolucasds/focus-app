@@ -13,6 +13,14 @@ import os
 import ctypes
 from PIL import Image
 
+# ==============================================================================
+# TRAVA DE SEGURANÇA: Impede que o app abra duplicado (Mutex)
+# ==============================================================================
+mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "FocusApp_PedroLucas_Mutex")
+if ctypes.windll.kernel32.GetLastError() == 183:  # 183 = ERROR_ALREADY_EXISTS
+    sys.exit()  # Se já existir um aberto, fecha este imediatamente em silêncio
+# ==============================================================================
+
 # --- App Settings ---
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("dark-blue")
@@ -34,7 +42,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except Exception:
-        # Pega a pasta exata onde o app.py está salvo, e não a pasta de quem o chamou
+        # Pega a pasta exata onde o app.py está salvo (isso garante que funcione no atalho)
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
@@ -288,7 +296,6 @@ class ToDoApp(customtkinter.CTk):
         self.load_tasks()
 
     def force_taskbar_presence(self):
-        # Essencial apenas para o app aparecer no Alt+Tab (mantido simples)
         hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -20)
         style = (style & ~0x00000080) | 0x00040000
@@ -307,7 +314,6 @@ class ToDoApp(customtkinter.CTk):
         else:
             self.stored_x = self.winfo_x()
             self.stored_y = self.winfo_y()
-            # Maximização simples
             sw = self.winfo_screenwidth()
             sh = self.winfo_screenheight() - 40
             self.geometry(f"{sw}x{sh}+0+0")
@@ -454,9 +460,8 @@ class ToDoApp(customtkinter.CTk):
                 self.task_scroll_frame, fg_color="transparent"
             )
             row_frame.grid(row=i, column=0, sticky="ew", pady=(4, 4))
-            row_frame.grid_columnconfigure(1, weight=1)  # Permite o texto expandir
+            row_frame.grid_columnconfigure(1, weight=1)
 
-            # 1. Apenas o Checkbox (sem texto)
             checkbox = customtkinter.CTkCheckBox(
                 row_frame,
                 text="",
@@ -469,30 +474,26 @@ class ToDoApp(customtkinter.CTk):
                 fg_color=COLOR_IOS_BLUE,
                 hover_color=COLOR_IOS_BLUE,
             )
-            checkbox.grid(
-                row=0, column=0, sticky="nw", pady=2
-            )  # nw = alinhado no topo esquerdo
+            checkbox.grid(row=0, column=0, sticky="nw", pady=2)
 
             if task["status"] == 1:
                 checkbox.select()
                 completed_tasks += 1
-                txt_color = "#A0A0A5"  # Texto fica levemente cinza se concluído
+                txt_color = "#A0A0A5"
             else:
                 all_completed = False
                 txt_color = COLOR_TEXT
 
-            # 2. O Texto da Tarefa (com quebra de linha inteligente)
             task_label = customtkinter.CTkLabel(
                 row_frame,
                 text=task["descricao"],
                 font=(FONT_FAMILY, FONT_SIZE_TASK),
                 text_color=txt_color,
                 justify="left",
-                wraplength=205,  # Se o texto passar de 205 pixels, vai para a próxima linha
+                wraplength=205,
             )
             task_label.grid(row=0, column=1, sticky="w", padx=(5, 5))
 
-            # Permite clicar no texto para marcar/desmarcar
             task_label.bind(
                 "<Button-1>",
                 lambda e, t_id=task["id"], c_val=task[
@@ -500,7 +501,6 @@ class ToDoApp(customtkinter.CTk):
                 ]: self.toggle_task_status(t_id, c_val),
             )
 
-            # 3. Botão de Apagar
             customtkinter.CTkButton(
                 row_frame,
                 text="✕",
@@ -512,9 +512,7 @@ class ToDoApp(customtkinter.CTk):
                 corner_radius=5,
                 font=(FONT_FAMILY, 14, "bold"),
                 command=lambda t_id=task["id"]: self.delete_task_event(t_id),
-            ).grid(
-                row=0, column=2, sticky="ne", padx=(5, 0)
-            )  # ne = alinhado no topo direito
+            ).grid(row=0, column=2, sticky="ne", padx=(5, 0))
 
         self.progress_bar.set(completed_tasks / len(tasks))
         if tasks and all_completed:
