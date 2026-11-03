@@ -42,7 +42,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except Exception:
-        # Pega a pasta exata onde o app.py está salvo (isso garante que funcione no atalho)
+        # Pega a pasta exata onde o app.py está salvo (garante que funcione no atalho)
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
@@ -476,18 +476,21 @@ class ToDoApp(customtkinter.CTk):
             )
             checkbox.grid(row=0, column=0, sticky="nw", pady=2)
 
+            # --- LÓGICA DO TEXTO RISCADO AQUI ---
             if task["status"] == 1:
                 checkbox.select()
                 completed_tasks += 1
                 txt_color = "#A0A0A5"
+                task_font = (FONT_FAMILY, FONT_SIZE_TASK, "overstrike")
             else:
                 all_completed = False
                 txt_color = COLOR_TEXT
+                task_font = (FONT_FAMILY, FONT_SIZE_TASK)
 
             task_label = customtkinter.CTkLabel(
                 row_frame,
                 text=task["descricao"],
-                font=(FONT_FAMILY, FONT_SIZE_TASK),
+                font=task_font,
                 text_color=txt_color,
                 justify="left",
                 wraplength=205,
